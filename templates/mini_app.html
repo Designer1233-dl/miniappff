@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ config.app_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+</head>
+<body>
+    <main class="page">
+        <section class="hero">
+            <p class="eyebrow">{{ config.app_title }}</p>
+            <h1>Фиолетовый Mini App с рулеткой и бонусами</h1>
+            <p class="subtitle">{{ config.app_subtitle }}</p>
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <span class="stat-label">Баланс</span>
+                    <strong id="balance-value">0 {{ config.currency }}</strong>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Пользователь</span>
+                    <strong id="user-label">Загрузка...</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel game-panel">
+            <div class="panel-head">
+                <h2>Рулетка</h2>
+                <span class="pill">15 чисел: 7 красных, 7 черных, 1 зеленое</span>
+            </div>
+            <div class="wheel-legend">
+                <div class="legend-chip red">Красный x2</div>
+                <div class="legend-chip black">Черный x4</div>
+                <div class="legend-chip green">Зеленый x14</div>
+            </div>
+            <div class="bet-form">
+                <label class="field">
+                    <span>Ставка</span>
+                    <input id="bet-amount" type="number" min="0" step="0.01" placeholder="Введите сумму">
+                </label>
+                <div class="color-grid">
+                    <button class="color-btn red" data-color="red" type="button">Красный</button>
+                    <button class="color-btn black" data-color="black" type="button">Черный</button>
+                    <button class="color-btn green" data-color="green" type="button">Зеленый</button>
+                </div>
+            </div>
+            <div id="bet-result" class="result-card muted">
+                Сделай ставку, и здесь появится результат спина.
+            </div>
+        </section>
+
+        <section class="grid two">
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>Пополнение</h2>
+                    <span class="pill neutral">CryptoBot</span>
+                </div>
+                <label class="field">
+                    <span>Сумма пополнения</span>
+                    <input id="deposit-amount" type="number" min="0" step="0.01" placeholder="Например, 10">
+                </label>
+                <button id="deposit-button" class="action-btn" type="button">Создать счет</button>
+                <div id="deposit-result" class="note-box">Ссылка на оплату появится здесь.</div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>Вывод</h2>
+                    <span id="payout-mode" class="pill neutral">Проверка...</span>
+                </div>
+                <label class="field">
+                    <span>Сумма вывода</span>
+                    <input id="withdraw-amount" type="number" min="0" step="0.01" placeholder="Например, 5">
+                </label>
+                <button id="withdraw-button" class="action-btn secondary" type="button">Отправить заявку</button>
+                <div id="withdraw-result" class="note-box">Статус вывода будет показан здесь.</div>
+            </article>
+        </section>
+
+        <section class="grid two">
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>Бонусы за подписку</h2>
+                    <span class="pill neutral">Каналы и награды</span>
+                </div>
+                <div id="bonuses-list" class="bonus-list"></div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-head">
+                    <h2>Промокоды</h2>
+                    <span id="promo-limit-pill" class="pill neutral">Лимит...</span>
+                </div>
+                <div class="stack-form">
+                    <label class="field">
+                        <span>Ввести промокод</span>
+                        <input id="promo-code-input" type="text" placeholder="Например, WELCOME">
+                    </label>
+                    <button id="promo-redeem-button" class="action-btn" type="button">Активировать промокод</button>
+                    <div id="promo-result" class="note-box">Здесь будет статус активации промокода.</div>
+                </div>
+                <div id="promo-list" class="history-list promo-list"></div>
+            </article>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">
+                <h2>Мои последние ставки</h2>
+            </div>
+            <div id="history-list" class="history-list"></div>
+        </section>
+
+        <section id="admin-panel" class="panel admin-panel hidden">
+            <div class="panel-head">
+                <h2>Админ-панель</h2>
+                <span class="pill danger">Только для админов</span>
+            </div>
+            <div class="admin-grid">
+                <article class="admin-card">
+                    <h3>Настройки выплат и промо</h3>
+                    <label class="toggle-row">
+                        <input id="auto-payouts-toggle" type="checkbox">
+                        <span>Автовыплаты через CryptoBot</span>
+                    </label>
+                    <label class="field">
+                        <span>Лимит промокодов в день</span>
+                        <input id="promo-daily-limit-input" type="number" min="0" step="1" placeholder="3">
+                    </label>
+                    <button id="save-settings" class="action-btn small" type="button">Сохранить</button>
+                </article>
+
+                <article class="admin-card">
+                    <h3>Добавить бонус за подписку</h3>
+                    <form id="bonus-form" class="stack-form">
+                        <input type="text" name="title" placeholder="Название бонуса" required>
+                        <input type="text" name="channel_ref" placeholder="@channel или -100..." required>
+                        <input type="number" name="reward_amount" step="0.01" min="0" placeholder="Сумма награды" required>
+                        <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp,.gif">
+                        <label class="toggle-row">
+                            <input type="checkbox" name="is_active" checked>
+                            <span>Бонус активен</span>
+                        </label>
+                        <button class="action-btn small" type="submit">Сохранить бонус</button>
+                    </form>
+                    <div id="bonus-admin-result" class="note-box compact">Здесь будет статус сохранения бонуса.</div>
+                </article>
+            </div>
+
+            <div class="admin-grid">
+                <article class="admin-card full">
+                    <h3>Создать промокод</h3>
+                    <form id="promo-form" class="stack-form promo-admin-form">
+                        <input type="text" name="title" placeholder="Название промо">
+                        <input type="text" name="code" placeholder="Код промокода" required>
+                        <input type="number" name="reward_amount" step="0.01" min="0" placeholder="Сумма награды" required>
+                        <input type="number" name="max_activations" step="1" min="1" placeholder="Сколько активаций" required>
+                        <label class="toggle-row">
+                            <input id="promo-deposit-required-toggle" type="checkbox" name="deposit_required">
+                            <span>Нужен депозит для активации</span>
+                        </label>
+                        <div class="grid two deposit-conditions">
+                            <input id="promo-deposit-days-input" type="number" name="deposit_days" step="1" min="0" placeholder="Срок депозита в днях">
+                            <input id="promo-deposit-amount-input" type="number" name="deposit_amount" step="0.01" min="0" placeholder="Сумма нужного депозита">
+                        </div>
+                        <label class="toggle-row">
+                            <input type="checkbox" name="is_active" checked>
+                            <span>Промокод активен</span>
+                        </label>
+                        <button class="action-btn small" type="submit">Создать промокод</button>
+                    </form>
+                    <div id="promo-admin-result" class="note-box compact">Здесь будет статус сохранения промокода.</div>
+                </article>
+            </div>
+
+            <article class="admin-card full">
+                <h3>Ожидают модерации</h3>
+                <div id="pending-withdrawals" class="history-list"></div>
+            </article>
+
+            <article class="admin-card full">
+                <h3>Управление бонусами</h3>
+                <div id="admin-bonus-list" class="history-list"></div>
+            </article>
+
+            <article class="admin-card full">
+                <h3>Управление промокодами</h3>
+                <div id="admin-promo-list" class="history-list"></div>
+            </article>
+        </section>
+    </main>
+
+    <script>
+        window.APP_CONFIG = {{ config | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
